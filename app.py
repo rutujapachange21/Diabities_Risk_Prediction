@@ -120,6 +120,11 @@ HTML_TEMPLATE = """
             color: #2b9348;
             border: 2px solid #55a630;
         }
+        .result-error {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -222,13 +227,19 @@ HTML_TEMPLATE = """
         </form>
 
         {% if prediction_text is not none %}
-            <div class="result-card {% if prediction_text == 1 %}result-positive{% else %}result-negative{% endif %}">
-                {% if prediction_text == 1 %}
+            {% if prediction_text == 1 %}
+                <div class="result-card result-positive">
                     ⚠️ Prediction: High Risk / Positive for Condition Detected.
-                {% else %}
+                </div>
+            {% elif prediction_text == 0 %}
+                <div class="result-card result-negative">
                     ✅ Prediction: Low Risk / Negative for Condition.
-                {% endif %}
-            </div>
+                </div>
+            {% else %}
+                <div class="result-card result-error">
+                    ⚠️ {{ prediction_text }}
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 </body>
@@ -240,7 +251,6 @@ def home():
     prediction_text = None
     if request.method == 'POST':
         try:
-            # Extract features matching the exact order trained in your model
             feature_names = [
                 'age', 'gender', 'city', 'bmi', 'family_history_diabetes', 
                 'physical_activity_level', 'diet_type', 'smoking_status', 
@@ -249,17 +259,15 @@ def home():
                 'blood_pressure_diastolic', 'waist_circumference_cm', 'income_bracket'
             ]
             
-            # Map input fields to float array
             features = [float(request.form[f]) for f in feature_names]
             final_features = np.array([features])
             
-            # Predict using the loaded model
             prediction = model.predict(final_features)
             prediction_text = int(prediction[0])
         except Exception as e:
-            prediction_text = f"Error in processing input: {str-e}"
+            prediction_text = f"Error in processing input: {e}"
 
     return render_template_string(HTML_TEMPLATE, prediction_text=prediction_text)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
